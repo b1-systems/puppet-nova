@@ -46,9 +46,14 @@ class nova::compute::libvirt (
   }
 
   nova_config {
-    'compute_driver':   value => 'libvirt.LibvirtDriver';
-    'libvirt_type':     value => $libvirt_type;
-    'connection_type':  value => 'libvirt';
-    'vncserver_listen': value => $vncserver_listen;
+    'compute_driver':                 value => 'libvirt.LibvirtDriver';
+    'libvirt_type':                   value => $libvirt_type;
+    #'connection_type':                value => 'libvirt';
+    'vncserver_listen':               value => $vncserver_listen;
+
+    'libvirt_ovs_bridge':             value => 'br-int';
+    'libvirt_vif_type':               value => 'ethernet';
+    'libvirt_vif_driver':             value => 'nova.virt.libvirt.vif.LibvirtHybridOVSBridgeDriver';
+    'libvirt_use_virtio_for_bridges': value => 'True';
   }
 }
