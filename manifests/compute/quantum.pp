@@ -3,10 +3,10 @@ class nova::compute::quantum (
 ){
 
   nova_config {
-    'libvirt_vif_driver':             value => $libvirt_vif_driver;
+    'DEFAULT/libvirt_vif_driver':             value => $libvirt_vif_driver;
     #'libvirt_vif_driver':             value => 'nova.virt.libvirt.vif.LibvirtHybirdOVSBridgeDriver';
-    'libvirt_use_virtio_for_bridges': value => 'True';
-    'libvirt_ovs_bridge':             value => 'br-int';
-    'libvirt_vif_type':               value => 'ethernet';
+    'DEFAULT/libvirt_use_virtio_for_bridges': value => 'True';
+    'DEFAULT/libvirt_ovs_bridge':             value => 'br-int';
+    'DEFAULT/libvirt_vif_type':               value => 'ethernet';
   }
 }

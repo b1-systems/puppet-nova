@@ -137,7 +137,7 @@ class nova(
     } else {
       fail("Invalid db connection ${sql_connection}")
     }
-    nova_config { 'sql_connection': value => $sql_connection }
+    nova_config { 'DEFAULT/sql_connection': value => $sql_connection }
   } else {
     Nova_config <<| title == 'sql_connection' |>>
   }
@@ -146,42 +146,42 @@ class nova(
 
   if $image_service == 'nova.image.glance.GlanceImageService' {
     if $glance_api_servers {
-      nova_config { 'glance_api_servers': value => $glance_api_servers }
+      nova_config { 'DEFAULT/glance_api_servers': value => $glance_api_servers }
     } else {
       # TODO this only supports setting a single address for the api server
       Nova_config <<| title == glance_api_servers |>>
     }
   }
 
-  nova_config { 'auth_strategy': value => $auth_strategy }
+  nova_config { 'DEFAULT/auth_strategy': value => $auth_strategy }
 
   if $rabbit_host {
-    nova_config { 'rabbit_host': value => $rabbit_host }
+    nova_config { 'DEFAULT/rabbit_host': value => $rabbit_host }
   } else {
     Nova_config <<| title == 'rabbit_host' |>>
   }
   # I may want to support exporting and collecting these
   nova_config {
-    'rabbit_password':     value => $rabbit_password;
-    'rabbit_port':         value => $rabbit_port;
-    'rabbit_userid':       value => $rabbit_userid;
-    'rabbit_virtual_host': value => $rabbit_virtual_host;
+    'DEFAULT/rabbit_password':     value => $rabbit_password;
+    'DEFAULT/rabbit_port':         value => $rabbit_port;
+    'DEFAULT/rabbit_userid':       value => $rabbit_userid;
+    'DEFAULT/rabbit_virtual_host': value => $rabbit_virtual_host;
   }
 
   nova_config {
-    'verbose':           value => $verbose;
-    'logdir':            value => $logdir;
+    'DEFAULT/verbose':           value => $verbose;
+    'DEFAULT/logdir':            value => $logdir;
     # Following may need to be broken out to different nova services
-    'state_path':        value => $state_path;
-    'lock_path':         value => $lock_path;
-    'service_down_time': value => $service_down_time;
-    'rootwrap_config':  value => $rootwrap_config;
+    'DEFAULT/state_path':        value => $state_path;
+    'DEFAULT/lock_path':         value => $lock_path;
+    'DEFAULT/service_down_time': value => $service_down_time;
+    'DEFAULT/rootwrap_config':  value => $rootwrap_config;
   }
 
 
   if $monitoring_notifications {
     nova_config {
-      'notification_driver': value => 'nova.notifier.rabbit_notifier'
+      'DEFAULT/notification_driver': value => 'nova.notifier.rabbit_notifier'
     }
   }
 
