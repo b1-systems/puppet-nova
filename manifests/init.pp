@@ -153,7 +153,10 @@ class nova(
     }
   }
 
-  nova_config { 'DEFAULT/auth_strategy': value => $auth_strategy }
+  nova_config {
+    'DEFAULT/auth_strategy':            value => $auth_strategy;
+    'DEFAULT/use_deprecated_auth':      value => 'false';
+  }
 
   if $rabbit_host {
     nova_config { 'DEFAULT/rabbit_host': value => $rabbit_host }
@@ -169,13 +172,15 @@ class nova(
   }
 
   nova_config {
-    'DEFAULT/verbose':           value => $verbose;
-    'DEFAULT/logdir':            value => $logdir;
+    'DEFAULT/verbose':            value => $verbose;
+    'DEFAULT/logdir':             value => $logdir;
     # Following may need to be broken out to different nova services
-    'DEFAULT/state_path':        value => $state_path;
-    'DEFAULT/lock_path':         value => $lock_path;
-    'DEFAULT/service_down_time': value => $service_down_time;
-    'DEFAULT/rootwrap_config':  value => $rootwrap_config;
+    'DEFAULT/state_path':         value => $state_path;
+    'DEFAULT/lock_path':          value => $lock_path;
+    'DEFAULT/service_down_time':  value => $service_down_time;
+    'DEFAULT/rootwrap_config':    value => $rootwrap_config;
+    #
+    'DEFAULT/firewall_driver':    value => 'nova.virt.libvirt.firewall.IptablesFirewallDriver';
   }
 
 
