@@ -28,6 +28,10 @@ class nova::network::quantum (
     nova_config { 'DEFAULT/quantum_connection_host': value => $quantum_connection_host }
   }
 
+  sysctl::value { 'net.ipv4.ip_forward':
+    value => '1'
+  }
+
   nova_config {
     'DEFAULT/quantum_auth_strategy':     value => $quantum_auth_strategy;
     'DEFAULT/network_api_class':         value => 'nova.network.quantumv2.api.API';
