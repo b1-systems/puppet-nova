@@ -9,6 +9,7 @@ class nova::params {
       $cert_package_name        = 'openstack-nova-cert'
       $common_package_name      = 'openstack-nova-common'
       $compute_package_name     = 'openstack-nova-compute'
+      $conductor_package_name   = 'openstack-nova-conductor'
       $consoleauth_package_name = 'openstack-nova-console'
       $doc_package_name         = 'openstack-nova-doc'
       $libvirt_package_name     = 'libvirt'
@@ -23,6 +24,7 @@ class nova::params {
       $api_service_name         = 'openstack-nova-api'
       $cert_service_name        = 'openstack-nova-cert'
       $compute_service_name     = 'openstack-nova-compute'
+      $conductor_service_name   = 'openstack-nova-conductor'
       $consoleauth_service_name = 'openstack-nova-consoleauth'
       $libvirt_service_name     = 'libvirtd'
       $network_service_name     = 'openstack-nova-network'
@@ -31,10 +33,17 @@ class nova::params {
       $tgt_service_name         = 'tgtd'
       $vncproxy_service_name    = 'openstack-nova-novncproxy'
       $volume_service_name      = 'openstack-nova-volume'
-      $special_service_provider = 'init'
       # redhat specific config defaults
       $root_helper              = 'sudo nova-rootwrap'
       $lock_path                = '/var/lib/nova/tmp'
+      case $::operatingsystem {
+        'RedHat': {
+          $special_service_provider = 'init'
+        }
+        default: {
+          $special_service_provider = undef
+        }
+      }
     }
     'Debian': {
       # package names
@@ -42,6 +51,7 @@ class nova::params {
       $cert_package_name        = 'nova-cert'
       $common_package_name      = 'nova-common'
       $compute_package_name     = 'nova-compute'
+      $conductor_package_name   = 'nova-conductor'
       $doc_package_name         = 'nova-doc'
       $libvirt_package_name     = 'libvirt-bin'
       $network_package_name     = 'nova-network'
@@ -54,6 +64,7 @@ class nova::params {
       $api_service_name         = 'nova-api'
       $cert_service_name        = 'nova-cert'
       $compute_service_name     = 'nova-compute'
+      $conductor_service_name   = 'nova-conductor'
       $consoleauth_service_name = 'nova-consoleauth'
       $libvirt_service_name     = 'libvirt-bin'
       $network_service_name     = 'nova-network'

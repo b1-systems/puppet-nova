@@ -2,7 +2,7 @@
 class nova::quota(
   $quota_instances = 10,
   $quota_cores = 20,
-  $quota_rams = 51200,
+  $quota_ram = 51200,
   $quota_volumes = 10,
   $quota_gigabytes = 1000,
   $quota_floating_ips = 10,
@@ -21,7 +21,7 @@ class nova::quota(
   nova_config {
     'DEFAULT/quota_instances': value => $quota_instances;
     'DEFAULT/quota_cores': value => $quota_cores;
-    'DEFAULT/quota_rams': value => $quota_rams;
+    'DEFAULT/quota_ram': value => $quota_ram;
     'DEFAULT/quota_volumes': value => $quota_volumes;
     'DEFAULT/quota_gigabytes': value => $quota_gigabytes;
     'DEFAULT/quota_floating_ips': value => $quota_floating_ips;

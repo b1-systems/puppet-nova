@@ -34,11 +34,13 @@ class nova(
   # this is how to query all resources from our clutser
   $nova_cluster_id='localcluster',
   $sql_connection = false,
+  $rpc_backend = 'nova.openstack.common.rpc.impl_kombu',
   $image_service = 'nova.image.glance.GlanceImageService',
   # these glance params should be optional
   # this should probably just be configured as a glance client
   $glance_api_servers = 'localhost:9292',
   $rabbit_host = 'localhost',
+  $rabbit_hosts = undef,
   $rabbit_password='guest',
   $rabbit_port='5672',
   $rabbit_userid='guest',
@@ -138,42 +140,63 @@ class nova(
       fail("Invalid db connection ${sql_connection}")
     }
     nova_config { 'DEFAULT/sql_connection': value => $sql_connection }
-  } else {
-    Nova_config <<| title == 'sql_connection' |>>
   }
 
-  nova_config { 'image_service': value => $image_service }
+  nova_config { 'DEFAULT/image_service': value => $image_service }
 
   if $image_service == 'nova.image.glance.GlanceImageService' {
     if $glance_api_servers {
       nova_config { 'DEFAULT/glance_api_servers': value => $glance_api_servers }
+    }
+  }
+
+  nova_config { 'DEFAULT/auth_strategy': value => $auth_strategy }
+
+  if $rpc_backend == 'nova.openstack.common.rpc.impl_kombu' {
+    # I may want to support exporting and collecting these
+    nova_config {
+      'DEFAULT/rabbit_password':     value => $rabbit_password;
+      'DEFAULT/rabbit_userid':       value => $rabbit_userid;
+      'DEFAULT/rabbit_virtual_host': value => $rabbit_virtual_host;
+    }
+
+    if size($rabbit_hosts) > 1 {
+      nova_config { 'DEFAULT/rabbit_ha_queues': value => 'true' }
     } else {
-      # TODO this only supports setting a single address for the api server
-      Nova_config <<| title == glance_api_servers |>>
+      nova_config { 'DEFAULT/rabbit_ha_queues': value => 'false' }
+    }
+
+    if $rabbit_hosts {
+      nova_config { 'DEFAULT/rabbit_hosts': value => join($rabbit_hosts, ',') }
+    } elsif $rabbit_host {
+      nova_config { 'DEFAULT/rabbit_host': value => $rabbit_host }
+      nova_config { 'DEFAULT/rabbit_port': value => $rabbit_port }
+      nova_config { 'DEFAULT/rabbit_hosts': value => "${rabbit_host}:${rabbit_port}" }
+    }
+  }
+
+  if $rpc_backend == 'nova.openstack.common.rpc.impl_qpid' {
+    nova_config {
+      'DEFAULT/qpid_hostname':               value => $qpid_hostname;
+      'DEFAULT/qpid_port':                   value => $qpid_port;
+      'DEFAULT/qpid_username':               value => $qpid_username;
+      'DEFAULT/qpid_password':               value => $qpid_password;
+      'DEFAULT/qpid_reconnect':              value => $qpid_reconnect;
+      'DEFAULT/qpid_reconnect_timeout':      value => $qpid_reconnect_timeout;
+      'DEFAULT/qpid_reconnect_limit':        value => $qpid_reconnect_limit;
+      'DEFAULT/qpid_reconnect_interval_min': value => $qpid_reconnect_interval_min;
+      'DEFAULT/qpid_reconnect_interval_max': value => $qpid_reconnect_interval_max;
+      'DEFAULT/qpid_reconnect_interval':     value => $qpid_reconnect_interval;
+      'DEFAULT/qpid_heartbeat':              value => $qpid_heartbeat;
+      'DEFAULT/qpid_protocol':               value => $qpid_protocol;
+      'DEFAULT/qpid_tcp_nodelay':            value => $qpid_tcp_nodelay;
     }
   }
 
   nova_config {
-    'DEFAULT/auth_strategy':            value => $auth_strategy;
-    'DEFAULT/use_deprecated_auth':      value => 'false';
-  }
-
-  if $rabbit_host {
-    nova_config { 'DEFAULT/rabbit_host': value => $rabbit_host }
-  } else {
-    Nova_config <<| title == 'rabbit_host' |>>
-  }
-  # I may want to support exporting and collecting these
-  nova_config {
-    'DEFAULT/rabbit_password':     value => $rabbit_password;
-    'DEFAULT/rabbit_port':         value => $rabbit_port;
-    'DEFAULT/rabbit_userid':       value => $rabbit_userid;
-    'DEFAULT/rabbit_virtual_host': value => $rabbit_virtual_host;
-  }
-
-  nova_config {
-    'DEFAULT/verbose':            value => $verbose;
-    'DEFAULT/logdir':             value => $logdir;
+    'DEFAULT/verbose':           value => $verbose;
+    'DEFAULT/logdir':            value => $logdir;
+    'DEFAULT/rpc_backend':       value => $rpc_backend;
     # Following may need to be broken out to different nova services
     'DEFAULT/state_path':         value => $state_path;
     'DEFAULT/lock_path':          value => $lock_path;
@@ -183,13 +206,11 @@ class nova(
     'DEFAULT/firewall_driver':    value => 'nova.virt.libvirt.firewall.IptablesFirewallDriver';
   }
 
-
   if $monitoring_notifications {
     nova_config {
       'DEFAULT/notification_driver': value => 'nova.notifier.rabbit_notifier'
     }
   }
-
 
   exec { 'post-nova_config':
     command => '/bin/echo "Nova config has changed"',

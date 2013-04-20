@@ -10,7 +10,7 @@ class nova::network::flat (
 ) {
 
   if $public_interface {
-    nova_config { 'public_interface': value => $public_interface }
+    nova_config { 'DEFAULT/public_interface': value => $public_interface }
   }
 
   nova_config {
