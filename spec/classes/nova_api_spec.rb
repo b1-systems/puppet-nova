@@ -63,19 +63,31 @@ describe 'nova::api' do
       it { should contain_nova_config('DEFAULT/osapi_compute_listen').with('value' => '0.0.0.0') }
       it { should contain_nova_config('DEFAULT/metadata_listen').with('value' => '0.0.0.0') }
       it { should contain_nova_config('DEFAULT/osapi_volume_listen').with('value' => '0.0.0.0') }
+      it 'should unconfigure quantum_metadata proxy' do
+        should contain_nova_config('DEFAULT/service_quantum_metadata_proxy').with('value' => false)
+        should contain_nova_config('DEFAULT/quantum_metadata_proxy_shared_secret').with('ensure' => 'absent')
+      end
     end
     describe 'with params' do
+      let :facts do
+        {
+          :osfamily          => 'RedHat',
+          :processorcount    => 5
+        }
+      end
       let :params do
         {
-          :auth_strategy     => 'foo',
-          :auth_host         => '10.0.0.1',
-          :auth_port         => 1234,
-          :auth_protocol     => 'https',
-          :admin_tenant_name => 'service2',
-          :admin_user        => 'nova2',
-          :admin_password    => 'passw0rd2',
-          :api_bind_address  => '192.168.56.210',
-          :volume_api_class  => 'nova.volume.cinder.API'
+          :auth_strategy                        => 'foo',
+          :auth_host                            => '10.0.0.1',
+          :auth_port                            => 1234,
+          :auth_protocol                        => 'https',
+          :admin_tenant_name                    => 'service2',
+          :admin_user                           => 'nova2',
+          :admin_password                       => 'passw0rd2',
+          :api_bind_address                     => '192.168.56.210',
+          :metadata_listen                      => '127.0.0.1',
+          :volume_api_class                     => 'nova.volume.cinder.API',
+          :quantum_metadata_proxy_shared_secret => 'secrete',
         }
       end
       it 'should use default params for api-paste.init' do
@@ -94,8 +106,11 @@ describe 'nova::api' do
       end
       it { should contain_nova_config('DEFAULT/ec2_listen').with('value' => '192.168.56.210') }
       it { should contain_nova_config('DEFAULT/osapi_compute_listen').with('value' => '192.168.56.210') }
-      it { should contain_nova_config('DEFAULT/metadata_listen').with('value' => '192.168.56.210') }
+      it { should contain_nova_config('DEFAULT/metadata_listen').with('value' => '127.0.0.1') }
       it { should contain_nova_config('DEFAULT/osapi_volume_listen').with('value' => '192.168.56.210') }
+      it { should contain_nova_config('DEFAULT/osapi_compute_workers').with('value' => '5') }
+      it { should contain_nova_config('DEFAULT/service_quantum_metadata_proxy').with('value' => 'true') }
+      it { should contain_nova_config('DEFAULT/quantum_metadata_proxy_shared_secret').with('value' => 'secrete') }
     end
   end
   describe 'on rhel' do

@@ -4,15 +4,14 @@
 # ==Parameters
 #
 # [sql_connection] Connection url to use to connect to nova sql database.
-#  If specified as false, then it tries to collect the exported resource
-#   Nova_config <<| title == 'sql_connection' |>>. Optional. Defaults to false.
 # [image_service] Service used to search for and retrieve images. Optional.
 #   Defaults to 'nova.image.local.LocalImageService'
 # [glance_api_servers] List of addresses for api servers. Optional.
 #   Defaults to localhost:9292.
 # [rabbit_host] Location of rabbitmq installation. Optional. Defaults to localhost.
-# [rabbit_password] Password used to connect to rabbitmq. Optional. Defaults to guest.
 # [rabbit_port] Port for rabbitmq instance. Optional. Defaults to 5672.
+# [rabbit_hosts] Location of rabbitmq installation. Optional. Defaults to undef.
+# [rabbit_password] Password used to connect to rabbitmq. Optional. Defaults to guest.
 # [rabbit_userid] User used to connect to rabbitmq. Optional. Defaults to guest.
 # [rabbit_virtual_host] The RabbitMQ virtual host. Optional. Defaults to /.
 # [auth_strategy]
@@ -45,12 +44,26 @@ class nova(
   $rabbit_port='5672',
   $rabbit_userid='guest',
   $rabbit_virtual_host='/',
+  $qpid_hostname = 'localhost',
+  $qpid_port = '5672',
+  $qpid_username = 'guest',
+  $qpid_password = 'guest',
+  $qpid_reconnect = true,
+  $qpid_reconnect_timeout = 0,
+  $qpid_reconnect_limit = 0,
+  $qpid_reconnect_interval_min = 0,
+  $qpid_reconnect_interval_max = 0,
+  $qpid_reconnect_interval = 0,
+  $qpid_heartbeat = 60,
+  $qpid_protocol = 'tcp',
+  $qpid_tcp_nodelay = true,
   $auth_strategy = 'keystone',
   $service_down_time = 60,
   $logdir = '/var/log/nova',
   $state_path = '/var/lib/nova',
   $lock_path = $::nova::params::lock_path,
   $verbose = false,
+  $debug = false,
   $periodic_interval = '60',
   $report_interval = '10',
   $rootwrap_config = '/etc/nova/rootwrap.conf',
@@ -113,7 +126,7 @@ class nova(
 
   file { $logdir:
     ensure  => directory,
-    mode    => '0751',
+    mode    => '0750',
   }
   file { '/etc/nova/nova.conf':
     mode  => '0640',
@@ -195,15 +208,14 @@ class nova(
 
   nova_config {
     'DEFAULT/verbose':           value => $verbose;
+    'DEFAULT/debug':             value => $debug;
     'DEFAULT/logdir':            value => $logdir;
     'DEFAULT/rpc_backend':       value => $rpc_backend;
     # Following may need to be broken out to different nova services
-    'DEFAULT/state_path':         value => $state_path;
-    'DEFAULT/lock_path':          value => $lock_path;
-    'DEFAULT/service_down_time':  value => $service_down_time;
-    'DEFAULT/rootwrap_config':    value => $rootwrap_config;
-    #
-    'DEFAULT/firewall_driver':    value => 'nova.virt.libvirt.firewall.IptablesFirewallDriver';
+    'DEFAULT/state_path':        value => $state_path;
+    'DEFAULT/lock_path':         value => $lock_path;
+    'DEFAULT/service_down_time': value => $service_down_time;
+    'DEFAULT/rootwrap_config':  value => $rootwrap_config;
   }
 
   if $monitoring_notifications {

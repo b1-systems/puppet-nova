@@ -11,6 +11,7 @@
 # * admin_tenant_name
 # * admin_user
 # * enabled_apis
+# * quantum_metadata_proxy_shared_secret
 #
 class nova::api(
   $admin_password,
@@ -23,9 +24,12 @@ class nova::api(
   $admin_tenant_name = 'services',
   $admin_user        = 'nova',
   $api_bind_address  = '0.0.0.0',
+  $metadata_listen   = '0.0.0.0',
   $enabled_apis      = 'ec2,osapi_compute,metadata',
   $volume_api_class  = 'nova.volume.cinder.API',
-  $sync_db           = true
+  $workers           = $::processorcount,
+  $sync_db           = true,
+  $quantum_metadata_proxy_shared_secret = undef
 ) {
 
   include nova::params
@@ -50,13 +54,27 @@ class nova::api(
   }
 
   nova_config {
-    'DEFAULT/api_paste_config':     value => '/etc/nova/api-paste.ini';
-    'DEFAULT/enabled_apis':         value => $enabled_apis;
-    'DEFAULT/volume_api_class':     value => $volume_api_class;
-    'DEFAULT/ec2_listen':           value => $api_bind_address;
-    'DEFAULT/osapi_compute_listen': value => $api_bind_address;
-    'DEFAULT/metadata_listen':      value => $api_bind_address;
-    'DEFAULT/osapi_volume_listen':  value => $api_bind_address;
+    'DEFAULT/api_paste_config':      value => '/etc/nova/api-paste.ini';
+    'DEFAULT/enabled_apis':          value => $enabled_apis;
+    'DEFAULT/volume_api_class':      value => $volume_api_class;
+    'DEFAULT/ec2_listen':            value => $api_bind_address;
+    'DEFAULT/osapi_compute_listen':  value => $api_bind_address;
+    'DEFAULT/metadata_listen':       value => $metadata_listen;
+    'DEFAULT/osapi_volume_listen':   value => $api_bind_address;
+    'DEFAULT/osapi_compute_workers': value => $workers;
+  }
+
+  if ($quantum_metadata_proxy_shared_secret){
+    nova_config {
+      'DEFAULT/service_quantum_metadata_proxy': value => true;
+      'DEFAULT/quantum_metadata_proxy_shared_secret':
+        value => $quantum_metadata_proxy_shared_secret;
+    }
+  } else {
+    nova_config {
+      'DEFAULT/service_quantum_metadata_proxy': value => false;
+      'DEFAULT/quantum_metadata_proxy_shared_secret': ensure => absent;
+    }
   }
 
   nova_paste_api_ini {

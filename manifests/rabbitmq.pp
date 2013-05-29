@@ -5,7 +5,6 @@
 class nova::rabbitmq(
   $userid       ='guest',
   $password     ='guest',
-  $bind_host    ='0.0.0.0',
   $port         ='5672',
   $virtual_host ='/',
   $enabled      = true
@@ -40,7 +39,6 @@ class nova::rabbitmq(
 
   class { 'rabbitmq::server':
     service_ensure    => $service_ensure,
-    node_ip_address   => $bind_host,
     port              => $port,
     delete_guest_user => $delete_guest_user,
   }
