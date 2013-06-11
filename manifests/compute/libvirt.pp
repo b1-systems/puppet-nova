@@ -51,4 +51,6 @@ class nova::compute::libvirt (
     'DEFAULT/connection_type':  value => 'libvirt';
     'DEFAULT/vncserver_listen': value => $vncserver_listen;
   }
+  
+  realize File['/etc/libvirt/qemu.conf']
 }
