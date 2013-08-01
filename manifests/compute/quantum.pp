@@ -1,5 +1,5 @@
 class nova::compute::quantum (
-  $libvirt_vif_driver = 'nova.virt.libvirt.vif.LibvirtOpenVswitchDriver'
+  $libvirt_vif_driver = 'nova.virt.libvirt.vif.LibvirtGenericVIFDriver'
 ){
 
   nova_config {
