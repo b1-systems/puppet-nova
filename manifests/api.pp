@@ -27,7 +27,7 @@ class nova::api(
   $metadata_listen   = '0.0.0.0',
   $enabled_apis      = 'ec2,osapi_compute,metadata',
   $volume_api_class  = 'nova.volume.cinder.API',
-  $workers           = $::processorcount,
+  $workers           = 4,
   $sync_db           = true,
   $quantum_metadata_proxy_shared_secret = undef
 ) {
