@@ -29,7 +29,9 @@ class nova::api(
   $volume_api_class  = 'nova.volume.cinder.API',
   $workers           = 4,
   $sync_db           = true,
-  $quantum_metadata_proxy_shared_secret = undef
+  $quantum_metadata_proxy_shared_secret = undef,
+  $default_ratelimit = '(GET, "*", .*, 2000, MINUTE); (POST, "*", .*, 2000, MINUTE)',
+  $ratelimit_factory = 'nova.api.openstack.compute.limits:RateLimitingMiddleware.factory'
 ) {
 
   include nova::params
@@ -84,6 +86,8 @@ class nova::api(
     'filter:authtoken/admin_tenant_name': value => $admin_tenant_name;
     'filter:authtoken/admin_user':        value => $admin_user;
     'filter:authtoken/admin_password':    value => $admin_password;
+    'filter:ratelimit/paste.filter_factory': value => $ratelimit_factory;
+    'filter:ratelimit/limits':               value => $default_ratelimit;
   }
 
   if 'occiapi' in $enabled_apis {
