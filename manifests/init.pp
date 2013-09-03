@@ -153,6 +153,8 @@ class nova(
       fail("Invalid db connection ${sql_connection}")
     }
     nova_config { 'DEFAULT/sql_connection': value => $sql_connection }
+    nova_config { 'DEFAULT/max_retries': value => -1 }
+    nova_config { 'DEFAULT/retry_interval': value => 10 }
   }
 
   nova_config { 'DEFAULT/image_service': value => $image_service }
