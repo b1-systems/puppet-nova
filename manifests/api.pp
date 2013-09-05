@@ -30,9 +30,10 @@ class nova::api(
   $workers           = 4,
   $sync_db           = true,
   $quantum_metadata_proxy_shared_secret = undef,
-  $default_ratelimit = '(GET, "*", .*, 2000, MINUTE); (POST, "*", .*, 2000, MINUTE)',
-  $ratelimit_factory = 'nova.api.openstack.compute.limits:RateLimitingMiddleware.factory'
-) {
+  $ratelimit = undef,
+  $ratelimit_factory =
+    'nova.api.openstack.compute.limits:RateLimitingMiddleware.factory'
+    ) {
 
   include nova::params
   require keystone::python
@@ -45,7 +46,7 @@ class nova::api(
   Nova_paste_api_ini<| |> ~> Service['nova-api']
 
   class {'cinder::client':
-     notify         => Service[$::nova::params::api_service_name],
+    notify         => Service[$::nova::params::api_service_name],
   }
 
   nova::generic_service { 'api':
@@ -86,8 +87,13 @@ class nova::api(
     'filter:authtoken/admin_tenant_name': value => $admin_tenant_name;
     'filter:authtoken/admin_user':        value => $admin_user;
     'filter:authtoken/admin_password':    value => $admin_password;
-    'filter:ratelimit/paste.filter_factory': value => $ratelimit_factory;
-    'filter:ratelimit/limits':               value => $default_ratelimit;
+  }
+
+  if ($ratelimit != undef) {
+    nova_paste_api_ini {
+      'filter:ratelimit/paste.filter_factory': value => $ratelimit_factory;
+      'filter:ratelimit/limits':               value => $ratelimit;
+    }
   }
 
   if 'occiapi' in $enabled_apis {
