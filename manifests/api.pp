@@ -87,8 +87,13 @@ class nova::api(
     'filter:authtoken/admin_tenant_name': value => $admin_tenant_name;
     'filter:authtoken/admin_user':        value => $admin_user;
     'filter:authtoken/admin_password':    value => $admin_password;
-    'filter:ratelimit/paste.filter_factory': value => $ratelimit_factory;
-    'filter:ratelimit/limits':               value => $default_ratelimit;
+  }
+
+  if ($ratelimit != undef) {
+    nova_paste_api_ini {
+      'filter:ratelimit/paste.filter_factory': value => $ratelimit_factory;
+      'filter:ratelimit/limits':               value => $ratelimit;
+    }
   }
 
   if ($ratelimit != undef) {
