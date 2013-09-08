@@ -96,20 +96,6 @@ class nova::api(
     }
   }
 
-  if ($ratelimit != undef) {
-    nova_paste_api_ini {
-      'filter:ratelimit/paste.filter_factory': value => $ratelimit_factory;
-      'filter:ratelimit/limits':               value => $ratelimit;
-    }
-  }
-
-  if ($ratelimit != undef) {
-    nova_paste_api_ini {
-      'filter:ratelimit/paste.filter_factory': value => $ratelimit_factory;
-      'filter:ratelimit/limits':               value => $ratelimit;
-    }
-  }
-
   if 'occiapi' in $enabled_apis {
     if !defined(Package['python-pip']) {
         package {'python-pip':
