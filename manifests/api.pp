@@ -33,7 +33,7 @@ class nova::api(
   $ratelimit = undef,
   $ratelimit_factory =
     'nova.api.openstack.compute.limits:RateLimitingMiddleware.factory'
-) {
+    ) {
 
   include nova::params
   require keystone::python
