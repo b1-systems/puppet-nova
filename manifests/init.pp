@@ -44,6 +44,7 @@ class nova(
   $rabbit_port='5672',
   $rabbit_userid='guest',
   $rabbit_virtual_host='/',
+  $rabbit_durable_queues  = 'false',
   $qpid_hostname = 'localhost',
   $qpid_port = '5672',
   $qpid_username = 'guest',
@@ -170,9 +171,10 @@ class nova(
   if $rpc_backend == 'nova.openstack.common.rpc.impl_kombu' {
     # I may want to support exporting and collecting these
     nova_config {
-      'DEFAULT/rabbit_password':     value => $rabbit_password;
-      'DEFAULT/rabbit_userid':       value => $rabbit_userid;
-      'DEFAULT/rabbit_virtual_host': value => $rabbit_virtual_host;
+      'DEFAULT/rabbit_password':       value => $rabbit_password;
+      'DEFAULT/rabbit_userid':         value => $rabbit_userid;
+      'DEFAULT/rabbit_virtual_host':   value => $rabbit_virtual_host;
+      'DEFAULT/rabbit_durable_queues': value => $rabbit_durable_queues;
     }
 
     if size($rabbit_hosts) > 1 {
