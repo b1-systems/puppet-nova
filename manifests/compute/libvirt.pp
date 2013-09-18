@@ -33,12 +33,12 @@ class nova::compute::libvirt (
     }
   }
 
-  package { 'libvirt':
+  @package { 'libvirt':
     name   => $::nova::params::libvirt_package_name,
-    ensure => present,
+    ensure => installed,
   }
 
-  service { 'libvirt' :
+  @service { 'libvirt' :
     name     => $::nova::params::libvirt_service_name,
     ensure   => running,
     provider => $::nova::params::special_service_provider,
