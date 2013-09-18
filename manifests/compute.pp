@@ -29,9 +29,11 @@ class nova::compute(
     'DEFAULT/vncserver_proxyclient_address': value => $vncserver_proxyclient_address;
   }
 
-  package { 'bridge-utils':
-    ensure => present,
-    before => Nova::Generic_service['compute'],
+  if !defined(Package['bridge-utils']) {
+    package { 'bridge-utils':
+      ensure => present,
+      before => Nova::Generic_service['compute'],
+    }
   }
 
   nova::generic_service { 'compute':
