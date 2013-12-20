@@ -9,7 +9,8 @@ class nova::compute(
   $vncproxy_protocol             = 'http',
   $vncproxy_port                 = '6080',
   $vncproxy_path                 = '/vnc_auto.html',
-  $virtio_nic                    = false
+  $virtio_nic                    = false,
+  $network_device_mtu            = undef
  ) {
 
   include nova::params
@@ -48,5 +49,17 @@ class nova::compute(
     # Enable the virtio network card for instances
     nova_config { 'DEFAULT/libvirt_use_virtio_for_bridges': value => 'True' }
   }
+
+
+  if $network_device_mtu {
+    nova_config {
+      'DEFAULT/network_device_mtu':   value => $network_device_mtu;
+    }
+  } else {
+    nova_config {
+      'DEFAULT/network_device_mtu':   ensure => absent;
+    }
+  }
+
 
 }
