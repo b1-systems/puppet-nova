@@ -154,6 +154,9 @@ class nova(
       fail("Invalid db connection ${sql_connection}")
     }
     nova_config { 'DEFAULT/sql_connection': value => $sql_connection }
+    nova_config { 'DEFAULT/sql_min_pool_size': value => 1 }
+    nova_config { 'DEFAULT/sql_max_pool_size': value => 10 }
+    nova_config { 'DEFAULT/sql_max_overflow': value => 50 }
     nova_config { 'DEFAULT/sql_max_retries': value => -1 }
     nova_config { 'DEFAULT/sql_retry_interval': value => 10 }
   }
