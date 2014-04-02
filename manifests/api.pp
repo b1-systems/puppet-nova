@@ -77,8 +77,16 @@
 #   enable this if you have a sanitizing proxy.
 #   Defaults to false
 #
-# [*workers*]
+# [*osapi_compute_workers*]
 #   (optional) Number of workers for OpenStack API service
+#   Defaults to $::processorcount
+#
+# [*metadata_workers*]
+#   (optional) Number of workers for metadata service
+#   Defaults to $::processorcount
+#
+# [*conductor_workers*]
+#   (optional) Number of workers for OpenStack Conductor service
 #   Defaults to $::processorcount
 #
 # [*sync_db*]
@@ -118,12 +126,16 @@ class nova::api(
   $enabled_apis      = 'ec2,osapi_compute,metadata',
   $volume_api_class  = 'nova.volume.cinder.API',
   $use_forwarded_for = false,
-  $workers           = $::processorcount,
+  $osapi_compute_workers                = $::processorcount,
+  $metadata_workers                     = $::processorcount,
+  $conductor_workers                    = $::processorcount,
   $sync_db           = true,
   $neutron_metadata_proxy_shared_secret = undef,
   $ratelimits        = undef,
   $ratelimits_factory =
-    'nova.api.openstack.compute.limits:RateLimitingMiddleware.factory'
+    'nova.api.openstack.compute.limits:RateLimitingMiddleware.factory',
+  # DEPRECATED PARAMETER
+  $workers           = undef,
 ) {
 
   include nova::params
@@ -142,6 +154,13 @@ class nova::api(
     warning('The auth_strategy parameter is deprecated and has no effect.')
   }
 
+  if $workers {
+    warning('The workers parameter is deprecated, use osapi_compute_workers instead.')
+    $osapi_compute_workers_real = $workers
+  } else {
+    $osapi_compute_workers_real = $osapi_compute_workers
+  }
+
   nova::generic_service { 'api':
     enabled        => $enabled,
     manage_service => $manage_service,
@@ -158,7 +177,9 @@ class nova::api(
     'DEFAULT/osapi_compute_listen':  value => $api_bind_address;
     'DEFAULT/metadata_listen':       value => $metadata_listen;
     'DEFAULT/osapi_volume_listen':   value => $api_bind_address;
-    'DEFAULT/osapi_compute_workers': value => $workers;
+    'DEFAULT/osapi_compute_workers': value => $osapi_compute_workers_real;
+    'DEFAULT/metadata_workers':      value => $metadata_workers;
+    'conductor/workers':             value => $conductor_workers;
     'DEFAULT/use_forwarded_for':     value => $use_forwarded_for;
   }
 

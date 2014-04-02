@@ -58,11 +58,25 @@ describe 'nova::api' do
         should contain_nova_config('DEFAULT/osapi_compute_listen').with('value' => '0.0.0.0')
         should contain_nova_config('DEFAULT/metadata_listen').with('value' => '0.0.0.0')
         should contain_nova_config('DEFAULT/osapi_volume_listen').with('value' => '0.0.0.0')
+        should contain_nova_config('DEFAULT/osapi_compute_workers').with('value' => '5')
+        should contain_nova_config('DEFAULT/metadata_workers').with('value' => '5')
+        should contain_nova_config('conductor/workers').with('value' => '5')
       end
 
       it 'unconfigures neutron_metadata proxy' do
         should contain_nova_config('DEFAULT/service_neutron_metadata_proxy').with(:value => false)
         should contain_nova_config('DEFAULT/neutron_metadata_proxy_shared_secret').with(:ensure => 'absent')
+      end
+    end
+
+    context 'with deprecated parameters' do
+      before do
+        params.merge!({
+          :workers           => 1,
+        })
+      end
+      it 'configures various stuff' do
+        should contain_nova_config('DEFAULT/osapi_compute_workers').with('value' => '1')
       end
     end
 
@@ -86,6 +100,9 @@ describe 'nova::api' do
           :use_forwarded_for => false,
           :ratelimits        => '(GET, "*", .*, 100, MINUTE);(POST, "*", .*, 200, MINUTE)',
           :neutron_metadata_proxy_shared_secret => 'secrete',
+          :osapi_compute_workers                => 1,
+          :metadata_workers                     => 2,
+          :conductor_workers                    => 3,
         })
       end
 
@@ -131,7 +148,9 @@ describe 'nova::api' do
         should contain_nova_config('DEFAULT/metadata_listen').with('value' => '127.0.0.1')
         should contain_nova_config('DEFAULT/osapi_volume_listen').with('value' => '192.168.56.210')
         should contain_nova_config('DEFAULT/use_forwarded_for').with('value' => false)
-        should contain_nova_config('DEFAULT/osapi_compute_workers').with('value' => '5')
+        should contain_nova_config('DEFAULT/osapi_compute_workers').with('value' => '1')
+        should contain_nova_config('DEFAULT/metadata_workers').with('value' => '2')
+        should contain_nova_config('conductor/workers').with('value' => '3')
         should contain_nova_config('DEFAULT/service_neutron_metadata_proxy').with('value' => true)
         should contain_nova_config('DEFAULT/neutron_metadata_proxy_shared_secret').with('value' => 'secrete')
       end
