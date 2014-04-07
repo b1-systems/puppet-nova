@@ -66,6 +66,9 @@ describe 'nova' do
       it 'configures database' do
         should_not contain_nova_config('database/connection')
         should_not contain_nova_config('database/idle_timeout').with_value('3600')
+        should contain_nova_config('database/min_pool_size').with_value('1')
+        should contain_nova_config('database/max_pool_size').with_value('10')
+        should contain_nova_config('database/max_overflow').with_value('-1')
       end
 
       it 'configures image service' do
