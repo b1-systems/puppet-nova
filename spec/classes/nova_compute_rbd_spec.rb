@@ -50,7 +50,7 @@ describe 'nova::compute::rbd' do
         )
       end
 
-      it 'configure nova.conf with overriden parameters' do
+      it 'configure nova.conf with overridden parameters' do
           should contain_nova_config('libvirt/images_type').with_value('rbd')
           should contain_nova_config('libvirt/images_rbd_pool').with_value('AnotherPool')
           should contain_nova_config('libvirt/images_rbd_ceph_conf').with_value('/tmp/ceph.conf')
@@ -61,7 +61,8 @@ describe 'nova::compute::rbd' do
     context 'when using cephx' do
       before :each do
         params.merge!(
-          :libvirt_rbd_secret_uuid => 'UUID'
+          :libvirt_rbd_secret_uuid => 'UUID',
+          :rbd_keyring             => 'client.rbd_test'
         )
       end
 
@@ -73,7 +74,7 @@ describe 'nova::compute::rbd' do
         verify_contents(subject, '/etc/nova/secret.xml', [
           "<secret ephemeral=\'no\' private=\'no\'>",
           "  <usage type=\'ceph\'>",
-          "    <name>client.nova secret</name>",
+          "    <name>client.rbd_test secret</name>",
           "  </usage>",
           "  <uuid>UUID</uuid>",
           "</secret>"
@@ -84,7 +85,7 @@ describe 'nova::compute::rbd' do
           :require => 'File[/etc/nova/secret.xml]'
         )
         should contain_exec('set-secret-value virsh').with(
-          :command => "/usr/bin/virsh secret-set-value --secret $(cat /etc/nova/virsh.secret) --base64 $(ceph auth get-key client.nova)"
+          :command => "/usr/bin/virsh secret-set-value --secret $(cat /etc/nova/virsh.secret) --base64 $(ceph auth get-key client.rbd_test)"
         )
       end
     end

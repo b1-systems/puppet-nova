@@ -187,6 +187,27 @@
 #   (optional) Syslog facility to receive log lines.
 #   Defaults to 'LOG_USER'
 #
+# [*use_ssl*]
+#   (optional) Enable SSL on the API server
+#   Defaults to false, not set
+#
+# [*enabled_ssl_apis*]
+#   (optional) List of APIs to SSL enable
+#   Defaults to []
+#   Possible values : 'ec2', 'osapi_compute', 'metadata'
+#
+# [*cert_file*]
+#   (optinal) Certificate file to use when starting API server securely
+#   Defaults to false, not set
+#
+# [*key_file*]
+#   (optional) Private key file to use when starting API server securely
+#   Defaults to false, not set
+#
+# [*ca_file*]
+#   (optional) CA certificate file to use to verify connecting clients
+#   Defaults to false, not set_
+#
 # [*nova_user_id*]
 #   (optional) Create the nova user with the specified gid.
 #   Changing to a new uid after specifying a different uid previously,
@@ -200,6 +221,22 @@
 #   or using this option after the nova account already exists will break
 #   the ownership of all files/dirs owned by nova.
 #   Defaults to undef.
+#
+# [*nova_public_key*]
+#   (optional) Install public key in .ssh/authorized_keys for the 'nova' user.
+#   Expects a hash of the form { type => 'key-type', key => 'key-data' } where
+#   'key-type' is one of (ssh-rsa, ssh-dsa, ssh-ecdsa) and 'key-data' is the
+#   actual key data (e.g, 'AAAA...').
+#
+# [*nova_private_key*]
+#   (optional) Install private key into .ssh/id_rsa (or appropriate equivalent
+#   for key type).  Expects a hash of the form { type => 'key-type', key =>
+#   'key-data' }, where 'key-type' is one of (ssh-rsa, ssh-dsa, ssh-ecdsa) and
+#   'key-data' is the contents of the private key file.
+#
+# [*nova_shell*]
+#   (optional) Set shell for 'nova' user to the specified value.
+#   Defaults to '/bin/false'.
 #
 # [*mysql_module*]
 #   (optional) Mysql module version to use. Tested versions
@@ -270,8 +307,16 @@ class nova(
   $periodic_interval        = '60',
   $report_interval          = '10',
   $rootwrap_config          = '/etc/nova/rootwrap.conf',
+  $use_ssl                  = false,
+  $enabled_ssl_apis         = ['ec2', 'metadata', 'osapi_compute'],
+  $ca_file                  = false,
+  $cert_file                = false,
+  $key_file                 = false,
   $nova_user_id             = undef,
   $nova_group_id            = undef,
+  $nova_public_key          = undef,
+  $nova_private_key         = undef,
+  $nova_shell               = '/bin/false',
   # deprecated in folsom
   #$root_helper = $::nova::params::root_helper,
   $monitoring_notifications = false,
@@ -295,6 +340,20 @@ class nova(
     warning('The nova_cluster_id parameter is deprecated and has no effect.')
   }
 
+  validate_array($enabled_ssl_apis)
+  if empty($enabled_ssl_apis) and $use_ssl {
+      warning('enabled_ssl_apis is empty but use_ssl is set to true')
+  }
+
+  if $use_ssl {
+    if !$cert_file {
+      fail('The cert_file parameter is required when use_ssl is set to true')
+    }
+    if !$key_file {
+      fail('The key_file parameter is required when use_ssl is set to true')
+    }
+  }
+
   group { 'nova':
     ensure  => present,
     system  => true,
@@ -308,10 +367,59 @@ class nova(
     groups     => 'nova',
     home       => '/var/lib/nova',
     managehome => false,
-    shell      => '/bin/false',
+    shell      => $nova_shell,
     uid        => $nova_user_id,
     gid        => $nova_group_id,
   }
+
+  if $nova_public_key or $nova_private_key {
+    file { '/var/lib/nova/.ssh':
+      ensure => directory,
+      mode   => '0700',
+      owner  => nova,
+      group  => nova,
+    }
+
+    if $nova_public_key {
+      if ! $nova_public_key[key] or ! $nova_public_key[type] {
+        fail('You must provide both a key type and key data.')
+      }
+
+      ssh_authorized_key { 'nova-migration-public-key':
+        ensure  => present,
+        key     => $nova_public_key[key],
+        type    => $nova_public_key[type],
+        user    => 'nova',
+        require => File['/var/lib/nova/.ssh'],
+      }
+    }
+
+    if $nova_private_key {
+      if ! $nova_private_key[key] or ! $nova_private_key[type] {
+        fail('You must provide both a key type and key data.')
+      }
+
+      $nova_private_key_file = $nova_private_key[type] ? {
+        'ssh-rsa'   => '/var/lib/nova/.ssh/id_rsa',
+        'ssh-dsa'   => '/var/lib/nova/.ssh/id_dsa',
+        'ssh-ecdsa' => '/var/lib/nova/.ssh/id_ecdsa',
+        default     => undef
+      }
+
+      if ! $nova_private_key_file {
+        fail("Unable to determine name of private key file.  Type specified was '${nova_private_key[type]}' but should be one of: ssh-rsa, ssh-dsa, ssh-ecdsa.")
+      }
+
+      file { $nova_private_key_file:
+        content => $nova_private_key[key],
+        mode    => '0600',
+        owner   => nova,
+        group   => nova,
+        require => File['/var/lib/nova/.ssh'],
+      }
+    }
+  }
+
 
   # all nova_config resources should be applied
   # after the nova common package
@@ -503,6 +611,31 @@ class nova(
     }
   }
 
+  # SSL Options
+  if $use_ssl {
+    nova_config {
+      'DEFAULT/enabled_ssl_apis' : value => $enabled_ssl_apis;
+      'DEFAULT/ssl_cert_file' :    value => $cert_file;
+      'DEFAULT/ssl_key_file' :     value => $key_file;
+    }
+    if $ca_file {
+      nova_config { 'DEFAULT/ssl_ca_file' :
+        value => $ca_file,
+      }
+    } else {
+      nova_config { 'DEFAULT/ssl_ca_file' :
+        ensure => absent,
+      }
+    }
+  } else {
+    nova_config {
+      'DEFAULT/enabled_ssl_apis' : ensure => absent;
+      'DEFAULT/ssl_cert_file' :    ensure => absent;
+      'DEFAULT/ssl_key_file' :     ensure => absent;
+      'DEFAULT/ssl_ca_file' :      ensure => absent;
+    }
+  }
+
   if $logdir {
     warning('The logdir parameter is deprecated, use log_dir instead.')
     $log_dir_real = $logdir
@@ -542,6 +675,7 @@ class nova(
     'DEFAULT/lock_path':           value => $lock_path;
     'DEFAULT/service_down_time':   value => $service_down_time;
     'DEFAULT/rootwrap_config':     value => $rootwrap_config;
+    'DEFAULT/report_interval':     value => $report_interval;
   }
 
   if $notify_on_state_change and $notify_on_state_change in ['vm_state', 'vm_and_task_state'] {

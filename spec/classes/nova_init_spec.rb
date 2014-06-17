@@ -98,6 +98,7 @@ describe 'nova' do
         should contain_nova_config('DEFAULT/lock_path').with_value(platform_params[:lock_path])
         should contain_nova_config('DEFAULT/service_down_time').with_value('60')
         should contain_nova_config('DEFAULT/rootwrap_config').with_value('/etc/nova/rootwrap.conf')
+        should contain_nova_config('DEFAULT/report_interval').with_value('10')
       end
 
       it 'installs utilities' do
@@ -133,7 +134,9 @@ describe 'nova' do
           :notification_topics      => 'openstack',
           :notify_api_faults        => true,
           :nova_user_id             => '499',
-          :nova_group_id            => '499' }
+          :nova_group_id            => '499',
+          :report_interval          => '60',
+          :nova_shell               => '/bin/bash' }
       end
 
       it 'creates user and group' do
@@ -149,7 +152,7 @@ describe 'nova' do
           :groups     => 'nova',
           :home       => '/var/lib/nova',
           :managehome => false,
-          :shell      => '/bin/false',
+          :shell      => '/bin/bash',
           :uid        => '499',
           :gid        => '499'
         )
@@ -198,6 +201,7 @@ describe 'nova' do
         should contain_nova_config('DEFAULT/notification_driver').with_value('ceilometer.compute.nova_notifier')
         should contain_nova_config('DEFAULT/notification_topics').with_value('openstack')
         should contain_nova_config('DEFAULT/notify_api_faults').with_value(true)
+        should contain_nova_config('DEFAULT/report_interval').with_value('60')
       end
 
       context 'with multiple notification_driver' do
@@ -412,6 +416,175 @@ describe 'nova' do
         it { should contain_nova_config('DEFAULT/qpid_sasl_mechanisms').with_value('DIGEST-MD5 GSSAPI PLAIN') }
       end
     end
+
+    context 'with ssh public key' do
+        let :params do
+            {
+                :nova_public_key => {'type' => 'ssh-rsa',
+                                     'key'  => 'keydata'}
+            }
+        end
+
+        it 'should install ssh public key' do
+            should contain_ssh_authorized_key('nova-migration-public-key').with(
+                :ensure => 'present',
+                :key => 'keydata',
+                :type => 'ssh-rsa'
+            )
+        end
+    end
+
+    context 'with ssh public key missing key type' do
+        let :params do
+            {
+                :nova_public_key => {'type' => '',
+                                     'key'  => 'keydata'}
+            }
+        end
+
+        it 'should raise an error' do
+            expect {
+                should contain_ssh_authorized_key('nova-migration-public-key').with(
+                    :ensure => 'present',
+                    :key => 'keydata',
+                    :type => ''
+                )
+            }.to raise_error Puppet::Error, /You must provide both a key type and key data./
+        end
+    end
+
+    context 'with ssh public key missing key data' do
+        let :params do
+            {
+                :nova_public_key => {'type' => 'ssh-rsa',
+                                     'key'  => ''}
+            }
+        end
+
+        it 'should raise an error' do
+            expect {
+                should contain_ssh_authorized_key('nova-migration-public-key').with(
+                    :ensure => 'present',
+                    :key => 'keydata',
+                    :type => ''
+                )
+            }.to raise_error Puppet::Error, /You must provide both a key type and key data./
+        end
+    end
+
+    context 'with ssh private key' do
+        let :params do
+            {
+                :nova_private_key => {'type' => 'ssh-rsa',
+                                     'key'  => 'keydata'}
+            }
+        end
+
+        it 'should install ssh private key' do
+            should contain_file('/var/lib/nova/.ssh/id_rsa').with(
+                :content => 'keydata'
+            )
+        end
+    end
+
+    context 'with ssh private key missing key type' do
+        let :params do
+            {
+                :nova_private_key => {'type' => '',
+                                     'key'  => 'keydata'}
+            }
+        end
+
+        it 'should raise an error' do
+            expect {
+                should contain_file('/var/lib/nova/.ssh/id_rsa').with(
+                    :content => 'keydata'
+                )
+            }.to raise_error Puppet::Error, /You must provide both a key type and key data./
+        end
+    end
+
+    context 'with ssh private key having incorrect key type' do
+        let :params do
+            {
+                :nova_private_key => {'type' => 'invalid',
+                                     'key'  => 'keydata'}
+            }
+        end
+
+        it 'should raise an error' do
+            expect {
+                should contain_file('/var/lib/nova/.ssh/id_rsa').with(
+                    :content => 'keydata'
+                )
+            }.to raise_error Puppet::Error, /Unable to determine name of private key file./
+        end
+    end
+
+    context 'with ssh private key missing key data' do
+        let :params do
+            {
+                :nova_private_key => {'type' => 'ssh-rsa',
+                                     'key'  => ''}
+            }
+        end
+
+        it 'should raise an error' do
+            expect {
+                should contain_file('/var/lib/nova/.ssh/id_rsa').with(
+                    :content => 'keydata'
+                )
+            }.to raise_error Puppet::Error, /You must provide both a key type and key data./
+        end
+    end
+
+    context 'with SSL socket options set' do
+      let :params do
+        {
+          :use_ssl          => true,
+          :enabled_ssl_apis => ['ec2'],
+          :cert_file        => '/path/to/cert',
+          :ca_file          => '/path/to/ca',
+          :key_file         => '/path/to/key',
+        }
+      end
+
+      it { should contain_nova_config('DEFAULT/enabled_ssl_apis').with_value(['ec2']) }
+      it { should contain_nova_config('DEFAULT/ssl_ca_file').with_value('/path/to/ca') }
+      it { should contain_nova_config('DEFAULT/ssl_cert_file').with_value('/path/to/cert') }
+      it { should contain_nova_config('DEFAULT/ssl_key_file').with_value('/path/to/key') }
+    end
+
+    context 'with SSL socket options set with wrong parameters' do
+      let :params do
+        {
+          :use_ssl          => true,
+          :enabled_ssl_apis => ['ec2'],
+          :ca_file          => '/path/to/ca',
+          :key_file         => '/path/to/key',
+        }
+      end
+
+      it_raises 'a Puppet::Error', /The cert_file parameter is required when use_ssl is set to true/
+    end
+
+    context 'with SSL socket options set to false' do
+      let :params do
+        {
+          :use_ssl          => false,
+          :enabled_ssl_apis => [],
+          :cert_file        => false,
+          :ca_file          => false,
+          :key_file         => false,
+        }
+      end
+
+      it { should contain_nova_config('DEFAULT/enabled_ssl_apis').with_ensure('absent') }
+      it { should contain_nova_config('DEFAULT/ssl_ca_file').with_ensure('absent') }
+      it { should contain_nova_config('DEFAULT/ssl_cert_file').with_ensure('absent') }
+      it { should contain_nova_config('DEFAULT/ssl_key_file').with_ensure('absent') }
+    end
+
   end
 
   context 'on Debian platforms' do
