@@ -39,7 +39,7 @@
 #
 # [*database_max_overflow*]
 #   (optional) Maximum number of extra connections created when the pool is fully utilized.
-#   Defaults to -1
+#   Defaults to 30
 #
 # [*rpc_backend*]
 #   (optional) The rpc backend implementation to use, can be:
@@ -268,9 +268,10 @@ class nova(
   $ensure_package           = 'present',
   $database_connection      = false,
   $database_idle_timeout    = 3600,
-  $database_min_pool_size   = 1,
-  $database_max_pool_size   = 10,
-  $database_max_overflow    = -1,
+  $database_min_pool_size   = '1',
+  $database_max_pool_size   = '10',
+  $database_max_retries     = '10',
+  $database_max_overflow    = '30',
   $rpc_backend              = 'nova.openstack.common.rpc.impl_kombu',
   $image_service            = 'nova.image.glance.GlanceImageService',
   # these glance params should be optional
@@ -506,11 +507,8 @@ class nova(
       fail("Invalid db connection ${database_connection_real}")
     }
     nova_config {
-      'database/connection':   value => $database_connection_real, secret => true;
-      'database/idle_timeout': value => $database_idle_timeout_real;
-      'database/min_pool_size': value => $database_min_pool_size;
-      'database/max_pool_size': value => $database_max_pool_size;
-      'database/max_overflow': value => $database_max_overflow;
+      'database/connection':    value => $database_connection_real, secret => true;
+      'database/idle_timeout':  value => $database_idle_timeout_real;
     }
   }
 
@@ -676,6 +674,11 @@ class nova(
     'DEFAULT/service_down_time':   value => $service_down_time;
     'DEFAULT/rootwrap_config':     value => $rootwrap_config;
     'DEFAULT/report_interval':     value => $report_interval;
+    # db
+    'database/min_pool_size':      value => $database_min_pool_size;
+    'database/max_pool_size':      value => $database_max_pool_size;
+    'database/max_overflow':       value => $database_max_overflow;
+    'database/max_retries':        value => $database_max_retries;
   }
 
   if $notify_on_state_change and $notify_on_state_change in ['vm_state', 'vm_and_task_state'] {
