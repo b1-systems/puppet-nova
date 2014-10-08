@@ -38,6 +38,7 @@ define nova::generic_service(
         name   => $package_name,
         notify => Service[$nova_title],
       }
+      Nova_config<| |> -> Package[$package_name]
     }
   }
 
