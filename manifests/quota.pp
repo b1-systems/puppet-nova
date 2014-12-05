@@ -9,6 +9,7 @@ class nova::quota(
   $quota_metadata_items = 128,
   $quota_max_injected_files = 5,
   $quota_max_injected_file_content_bytes = 10240,
+  $quota_injected_file_content_bytes = 10240,
   $quota_max_injected_file_path_bytes = 255,
   $quota_security_groups = 10,
   $quota_security_group_rules = 20,
@@ -28,6 +29,7 @@ class nova::quota(
     'DEFAULT/quota_metadata_items': value => $quota_metadata_items;
     'DEFAULT/quota_max_injected_files': value => $quota_max_injected_files;
     'DEFAULT/quota_max_injected_file_content_bytes': value => $quota_max_injected_file_content_bytes;
+    'DEFAULT/quota_injected_file_content_bytes': value => $quota_injected_file_content_bytes;
     'DEFAULT/quota_max_injected_file_path_bytes': value => $quota_max_injected_file_path_bytes;
     'DEFAULT/quota_security_groups': value => $quota_security_groups;
     'DEFAULT/quota_security_group_rules': value => $quota_security_group_rules;
