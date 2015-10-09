@@ -78,7 +78,7 @@ class nova::rabbitmq(
       port                     => $port,
       delete_guest_user        => $delete_guest_user,
       config_cluster           => true,
-      cluster_disk_nodes       => $cluster_disk_nodes,
+      cluster_nodes            => $cluster_disk_nodes,
       wipe_db_on_cookie_change => true,
     }
   } else {
