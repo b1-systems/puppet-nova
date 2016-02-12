@@ -273,6 +273,9 @@ class nova(
   $database_max_retries     = '10',
   $database_max_overflow    = '30',
   $rpc_backend              = 'nova.openstack.common.rpc.impl_kombu',
+  $rpc_conn_pool_size       = '30',
+  $rpc_response_timeout     = '60',
+  $rpc_thread_pool_size     = '64',
   $image_service            = 'nova.image.glance.GlanceImageService',
   # these glance params should be optional
   # this should probably just be configured as a glance client
@@ -665,6 +668,9 @@ class nova(
     'DEFAULT/verbose':             value => $verbose;
     'DEFAULT/debug':               value => $debug;
     'DEFAULT/rpc_backend':         value => $rpc_backend;
+    'DEFAULT/rpc_conn_pool_size':  value => $rpc_conn_pool_size;
+    'DEFAULT/rpc_response_timeout': value => $rpc_response_timeout;
+    'DEFAULT/rpc_thread_pool_size': value => $rpc_thread_pool_size;
     'DEFAULT/notification_driver': value => $notification_driver_real;
     'DEFAULT/notification_topics': value => $notification_topics;
     'DEFAULT/notify_api_faults':   value => $notify_api_faults;
