@@ -231,18 +231,18 @@ class nova::api(
   if 'occiapi' in $enabled_apis {
     if !defined(Package['python-pip']) {
       package { 'python-pip':
-        ensure => latest,
+        ensure => installed,
       }
     }
     if !defined(Package['pyssf']) {
       package { 'pyssf':
-        ensure   => latest,
+        ensure   => installed,
         provider => pip,
         require  => Package['python-pip']
       }
     }
     package { 'openstackocci':
-      ensure   => latest,
+      ensure   => installed,
       provider => 'pip',
       require  => Package['python-pip'],
     }
